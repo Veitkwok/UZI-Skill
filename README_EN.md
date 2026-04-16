@@ -1,6 +1,6 @@
 <div align="center">
 
-# UZI-Skill
+# 游资（UZI）Skills
 
 *"51 legendary investors review your stock picks — Buffett and a Chinese day-trader finally sit at the same table."*
 
