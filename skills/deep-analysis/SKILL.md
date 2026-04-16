@@ -57,39 +57,44 @@ description: 个股深度分析的核心工作流。当用户要求"深度分析
 
 ---
 
-## ⚡ 快速启动（不要犹豫，直接跑）
+## ⚡ 两段式执行（数据靠脚本，判断靠你）
 
-当用户要求分析一只股票时，**立即执行以下命令，不要询问用户是否准备好**：
+流水线分两段——**中间你必须介入做 agent 分析**：
+
+### Stage 1 · 数据 + 骨架分（立即执行，不要犹豫）
 
 ```bash
-# 找到仓库根目录（包含 run.py 的目录）
+cd <repo_root>/skills/deep-analysis/scripts
+pip install -r ../../../requirements.txt 2>/dev/null
+python -c "from run_real_test import stage1; stage1('<股票名或代码>')"
+```
+
+Stage 1 自动完成：Task 1（22 维采集）→ Task 1.5（机构建模）→ Task 2（打分）→ Task 3（规则引擎骨架分）
+
+### 你的分析环节（Stage 1 之后、Stage 2 之前）
+
+**这一步不能跳过！** 详见下面的 Task 3 和 Task 4 章节。核心是：
+1. 读 `.cache/{ticker}/panel.json` 中 51 人的骨架分
+2. **Spawn 4 个并行 sub-agent 分组 role-play 投资者**——让他们真正"扮演"巴菲特/赵老哥思考
+3. 用 agent 的判断覆盖 panel.json 中的 headline/reasoning/score
+4. 写你自己的定性评语和叙事
+
+### Stage 2 · 生成报告
+
+```bash
+python -c "from run_real_test import stage2; stage2('<ticker>')"
+```
+
+Stage 2 读取你更新后的 panel.json + synthesis，生成 HTML 报告。
+
+### 快速模式（跳过 agent 介入）
+
+如果用户说"快速分析"或时间紧：
+```bash
 cd <repo_root>
-
-# 安装依赖（首次运行需要）
-pip install -r requirements.txt
-
-# 直接跑！ticker 支持代码和中文名
-python run.py <用户输入的股票名或代码>
+python run.py <股票> --no-browser
 ```
-
-**示例**：
-```bash
-python run.py 华工科技          # 中文名
-python run.py 000988.SZ         # A 股代码
-python run.py 00700.HK          # 港股
-python run.py AAPL              # 美股
-python run.py 贵州茅台 --remote  # 远程模式（生成公网链接）
-```
-
-`run.py` 会**自动完成所有 6 个 Task**（数据采集 → 机构建模 → 22 维打分 → 51 评委 → 综合研判 → 报告组装），最后输出 HTML 报告路径。
-
-**如果 `run.py` 不存在**（比如只安装了 skill 没有完整仓库），改用：
-```bash
-cd skills/deep-analysis/scripts
-python run_real_test.py <ticker>
-```
-
-**跑完之后你再做下面的"分析师"工作**（审查数据质量、写定性评语、构建叙事）。
+这会 stage1 + stage2 一把跑完，不做 agent 分析。速度快但评委判断全是规则引擎的机械输出。
 
 ---
 

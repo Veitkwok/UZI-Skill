@@ -777,7 +777,13 @@ def generate_synthesis(raw: dict, dims_scored: dict, panel: dict) -> dict:
     }
 
 
-def main(ticker: str = "002273.SZ"):
+def stage1(ticker: str) -> dict:
+    """Stage 1: 数据采集 + 建模 + 规则引擎骨架分。
+
+    返回 {ticker, raw, dims, panel, features} 供 Claude agent 审查。
+    Claude 应该在 stage1 之后介入，用 sub-agent 逐组分析 51 评委，
+    覆盖 panel.json 中的 headline/reasoning/score，然后调 stage2 生成报告。
+    """
     ti = parse_ticker(ticker)
     print(f"\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
     print(f"🎯 TARGET: {ti.full}")
@@ -803,7 +809,7 @@ def main(ticker: str = "002273.SZ"):
     raw["dimensions"]["21_research_workflow"] = compute_dim_21(_features_pre, raw, _d20)
     _d21 = raw["dimensions"]["21_research_workflow"]["data"]
     raw["dimensions"]["22_deep_methods"] = compute_dim_22(_features_pre, raw, _d20, _d21)
-    write_task_output(ti.full, "raw_data", raw)  # rewrite with new dims
+    write_task_output(ti.full, "raw_data", raw)
     _s20 = _d20["summary"]
     _s21 = _d21["summary"]
     _s22 = raw["dimensions"]["22_deep_methods"]["data"]["summary"]
@@ -813,23 +819,66 @@ def main(ticker: str = "002273.SZ"):
     print(f"  IC Memo: {_s22.get('ic_recommendation')}")
     print(f"  BCG: {_s22.get('bcg_position')} · 行业吸引力 {_s22.get('industry_attractiveness')}%")
 
-    print("\n📏 Task 2 · 19 维打分")
+    print("\n📏 Task 2 · 22 维打分")
     dims = score_dimensions(raw)
     write_task_output(ti.full, "dimensions", dims)
     print(f"  基本面得分: {dims['fundamental_score']}/100")
 
-    print("\n🎭 Task 3 · 51 贤评审团")
+    print("\n🎭 Task 3 · 51 评委规则引擎（骨架分）")
     panel = generate_panel(dims, raw)
     write_task_output(ti.full, "panel", panel)
     sd = panel["signal_distribution"]
-    print(f"  看多 {sd['bullish']} · 中性 {sd['neutral']} · 看空 {sd['bearish']}")
+    skip_n = sd.get("skip", 0)
+    active_n = len(panel["investors"]) - skip_n
+    print(f"  参与 {active_n} · 跳过 {skip_n} · 看多 {sd['bullish']} · 中性 {sd['neutral']} · 看空 {sd['bearish']}")
 
-    print("\n⚖ Task 4 · 综合研判")
+    features = extract_features(raw, raw.get("dimensions", {}))
+
+    print(f"\n{'━' * 50}")
+    print(f"📋 Stage 1 完成 · 骨架分已生成")
+    print(f"   数据: .cache/{ti.full}/raw_data.json")
+    print(f"   评分: .cache/{ti.full}/dimensions.json")
+    print(f"   评委: .cache/{ti.full}/panel.json")
+    print(f"")
+    print(f"   ⏸️  此时 Claude agent 应介入：")
+    print(f"      1. 读取 panel.json 中 51 人的骨架分")
+    print(f"      2. Spawn 4 个 sub-agent 分组 role-play 投资者")
+    print(f"      3. 用 agent 判断覆盖 panel.json 中的 headline/reasoning")
+    print(f"      4. 然后调用 stage2('{ti.full}') 生成最终报告")
+    print(f"{'━' * 50}")
+
+    return {
+        "ticker": ti.full,
+        "raw": raw,
+        "dims": dims,
+        "panel": panel,
+        "features": features,
+    }
+
+
+def stage2(ticker: str) -> str:
+    """Stage 2: 综合研判 + 报告组装。
+
+    在 Claude agent 审查/覆盖 panel.json 之后调用。
+    读取 .cache 中的最新数据生成报告。
+    返回报告路径。
+    """
+    from lib.cache import read_task_output
+    ti = parse_ticker(ticker)
+
+    raw = read_task_output(ti.full, "raw_data")
+    dims = read_task_output(ti.full, "dimensions")
+    panel = read_task_output(ti.full, "panel")
+
+    if not (raw and dims and panel):
+        raise RuntimeError(f"Stage 2 缺少数据，请先跑 stage1('{ticker}')")
+
+    print(f"\n⚖ Task 4 · 综合研判")
     syn = generate_synthesis(raw, dims, panel)
     write_task_output(ti.full, "synthesis", syn)
     print(f"  综合评分: {syn['overall_score']}/100 · {syn['verdict_label']}")
 
-    print("\n📄 Task 5 · 报告组装")
+    print(f"\n📄 Task 5 · 报告组装")
     from assemble_report import assemble
     out = assemble(ti.full)
     print(f"  → {out}")
@@ -837,13 +886,12 @@ def main(ticker: str = "002273.SZ"):
     from inline_assets import main as inline_main
     standalone = inline_main(ti.full)
 
-    # Generate share card & war report PNGs (optional — requires playwright)
     try:
         from render_share_card import main as render_sc
         render_sc(ti.full)
         print(f"  ✓ 朋友圈分享卡 PNG")
     except Exception as e:
-        print(f"  ⚠️ 分享卡跳过 (playwright 未安装?): {e}")
+        print(f"  ⚠️ 分享卡跳过: {e}")
     try:
         from render_war_report import main as render_wr
         render_wr(ti.full)
@@ -851,12 +899,35 @@ def main(ticker: str = "002273.SZ"):
     except Exception as e:
         print(f"  ⚠️ 战报跳过: {e}")
 
-    # Ensure standalone file is fully written
     standalone_path = Path(standalone).resolve()
     assert standalone_path.exists() and standalone_path.stat().st_size > 10000, \
         f"Standalone file missing or too small: {standalone_path}"
 
-    print(f"\n✅ All done!")
+    print(f"\n✅ Stage 2 完成!")
+    print(f"   报告: {standalone_path}")
+    print(f"   大小: {standalone_path.stat().st_size // 1024} KB")
+
+    if os.environ.get("UZI_NO_AUTO_OPEN") != "1":
+        try:
+            import webbrowser
+            webbrowser.open(standalone_path.as_uri())
+            print(f"   🌐 已在浏览器中打开")
+        except Exception:
+            print(f"   💡 手动打开: {standalone_path}")
+
+    return str(standalone_path)
+
+
+def main(ticker: str = "002273.SZ"):
+    """完整流程: stage1 + stage2 一把跑完（无 agent 介入）。
+
+    当 Claude agent 使用时，应该分开调用:
+        result = stage1(ticker)   # 数据+骨架分
+        # ... agent 审查 panel.json, spawn sub-agents ...
+        stage2(ticker)            # 生成报告
+    """
+    stage1(ticker)
+    stage2(ticker)
     print(f"   Standalone: {standalone_path}")
     print(f"   Size: {standalone_path.stat().st_size // 1024} KB")
 
