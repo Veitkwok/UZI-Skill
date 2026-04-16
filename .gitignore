@@ -33,3 +33,4 @@ skills/deep-analysis/scripts/_*.py
 .env
 .env.local
 *.key
+docs/screenshots/full-page.png

@@ -766,6 +766,12 @@ def main(ticker: str = "002273.SZ"):
     print(f"\n✅ All done!")
     print(f"   Standalone: {standalone}")
 
+    # Auto-open in browser
+    import webbrowser
+    abs_path = Path(standalone).resolve()
+    webbrowser.open(f"file:///{abs_path}")
+    print(f"   🌐 已在浏览器中打开")
+
 
 if __name__ == "__main__":
     arg = sys.argv[1] if len(sys.argv) > 1 else "002273.SZ"
