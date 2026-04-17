@@ -5,6 +5,22 @@
 
 ---
 
+## v2.8.1 (2026-04-17 quotes expansion · 海外人物真实原话)
+
+### 增强 · quotes-knowledge-base.md 补齐 22 位海外代表人物
+- **动机**：v2.8.0 做完 investor_profile 后发现 quotes-knowledge-base（agent 必读语料）只覆盖中国投资者，海外 20+ 人物原话空白。用户："还有很多你要去找他们的言论，去找一下，收集一下"
+- **方法**：4 个并行 research agent 按流派取证；严格要求真实可验证、不 fabricate
+- **产出**：KB 306 → 639 行；人物 23 → 45；每人 3-5 条带 URL 原话
+- **溯源标准**：优先原版书（Principles / Margin of Safety / One Up on Wall Street / Zero to One / Reminiscences）、官方年报（berkshirehathaway.com / oaktreecapital.com / ARK）、经过验证的 Goodreads / Farnam Street / 雪球 / WSJ / CNBC
+- **发现的副作用**：`chengdu` 被写进 PROFILES 但 KB 把它归类为"席位集合体·无个人原话" → 移出 PROFILES 走 group F fallback（席位集合体不应冒充个人人物）
+- **回归测试**：
+  - `test_quotes_knowledge_base_covers_authored_personas`（每个 authored 必须在 KB 有段落）
+  - `test_quotes_knowledge_base_has_source_urls`（抽查必须带 URL）
+- **若未来改 investor_profile**：新增 authored 人物必须同步加 KB 段落，否则测试 fail
+- **若未来改 KB**：不能删海外人物 URL（下游 agent 依赖可点击溯源）
+
+---
+
 ## v2.8.0 (2026-04-17 persona profile · 因地制宜)
 
 ### 增强 · 每个评委用自己方法论回答 3 个问题

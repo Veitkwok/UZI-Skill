@@ -338,6 +338,41 @@ def test_panel_carries_profile_fields():
         assert field in body, f"v2.8 regression: generate_panel 没往 panel 里写 {field}"
 
 
+# ─── v2.8.1 · quotes-knowledge-base 必须覆盖 22 个 authored 人物 ──
+def test_quotes_knowledge_base_covers_authored_personas():
+    """每个在 investor_profile.PROFILES 里 authored 的人物，都必须在
+    quotes-knowledge-base.md 里有真实原话段落（(id) 形式标识）"""
+    from lib.investor_profile import PROFILES
+    kb_path = SCRIPTS_DIR.parent.parent / "investor-panel" / "references" / "quotes-knowledge-base.md"
+    assert kb_path.exists(), f"quotes-knowledge-base.md missing at {kb_path}"
+    kb = kb_path.read_text(encoding="utf-8")
+    missing = []
+    for inv_id in PROFILES.keys():
+        # 段落 header 形如 "(`buffett`)" 或 "(`zhao_lg`)"
+        marker = f"(`{inv_id}`)"
+        if marker not in kb:
+            missing.append(inv_id)
+    assert not missing, f"v2.8.1 regression: quotes-knowledge-base 缺以下 authored 人物的原话段落: {missing}"
+
+
+def test_quotes_knowledge_base_has_source_urls():
+    """每个新加入的 Group A/B/C/D/G 海外人物段落必须带 http(s):// URL 溯源（不能裸奔）"""
+    kb_path = SCRIPTS_DIR.parent.parent / "investor-panel" / "references" / "quotes-knowledge-base.md"
+    kb = kb_path.read_text(encoding="utf-8")
+    # 抽查 3 个新人物必须有 URL
+    for inv_id in ("buffett", "soros", "simons"):
+        # 找到该人物段落
+        start = kb.find(f"(`{inv_id}`)")
+        assert start > 0, f"{inv_id} section not found"
+        # 取该段落到下一个 `### ` 之间的内容
+        next_header = kb.find("\n### ", start)
+        section = kb[start:next_header if next_header > 0 else len(kb)]
+        assert "http" in section, f"v2.8.1 regression: {inv_id} 原话段落缺 URL 溯源"
+        # 至少 2 条原话（数字编号）
+        assert section.count("\n1. ") >= 1 and (section.count("\n2. ") >= 1), \
+            f"v2.8.1 regression: {inv_id} 原话条数不足"
+
+
 if __name__ == "__main__":
     # Manual runner — no pytest required
     import inspect

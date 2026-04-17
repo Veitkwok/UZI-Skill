@@ -1,5 +1,75 @@
 # Release Notes
 
+## v2.8.1 — 2026-04-17 (quotes expansion · 22 个海外人物真实原话)
+
+> **quotes-knowledge-base.md 扩容 306 → 639 行，补齐 22 位海外代表人物的真实原话 + URL 溯源**
+
+### 背景
+
+用户："还有很多你要去找他们的言论，去找一下，收集一下"。
+
+v2.8.0 做完 investor_profile 层后，发现 `skills/investor-panel/references/quotes-knowledge-base.md`（agent 生成 comment 前**必读**的语料库）只覆盖 23 位中国投资者，20+ 海外代表人物（Buffett / Munger / Soros / Lynch / Simons / Dalio / Druck / Marks / Graham / Fisher / Klarman / Templeton / Thiel / Wood / Livermore / O'Neil / Minervini / Gann / Darvas / Thorp / D.E.Shaw / Robertson）**原话空白**。
+
+### 本次做了什么
+
+派 **4 个并行 research agent** 按流派去取证——严格要求**真实可验证**、不 fabricate：
+- Group A 价值派（6 人）· Berkshire 年报 / Goodreads / Farnam Street / 雪球
+- Group B 成长派（4 人）· One Up on Wall Street / WSJ / ARK / CNBC / C-SPAN
+- Group C 宏观对冲（5 人）· Principles / Oaktree memos / Reuters / Real Vision / NY Times
+- Group D 技术趋势（4 人）+ Group G 量化（3 人）· 原版书 / archive.org / TED / 华尔街见闻
+
+### 扩充结果
+
+| 指标 | v2.8.0 | v2.8.1 |
+|---|---|---|
+| quotes KB 行数 | 306 | **639** |
+| 覆盖人物 | 23 中国 | 23 中国 + **22 海外** = 45 |
+| 每人原话条数 | 3-5 | 3-5（海外人物 × 100+ 条总计） |
+| URL 溯源覆盖 | 中国投资者 | 全部（包括 berkshirehathaway.com / oaktreecapital.com / goodreads / archive.org / farnam street / 雪球 / WSJ / CNBC / Bloomberg / NY Times） |
+
+### 示例：Buffett 段落（全部带可点 URL）
+
+```
+### 巴菲特 (`buffett`) · Berkshire Hathaway Letters
+**核心方法论**: 以合理价格买入优秀企业并长期持有...
+**原话语料**:
+1. "别人贪婪时我恐惧..." — [2004 年致股东信](https://www.berkshirehathaway.com/letters/2004ltr.pdf)
+2. "用合理的价格买一家好公司..." — [1989 年致股东信](https://www.berkshirehathaway.com/letters/1989.html)
+3. "我们最喜欢的持有期是永远。" — [1988 年致股东信](https://www.berkshirehathaway.com/letters/1988.html)
+4. "只有在退潮时..." — [2001 年致股东信](https://www.berkshirehathaway.com/2001ar/2001letter.html)
+5. "投资的第一条规则是不要亏钱..." — [雪球专栏](...)
+**语言风格**: 朴素、幽默、爱打比方、农夫式智慧...
+```
+
+### 附带修复
+
+- `investor_profile.py::PROFILES` 移除 `chengdu`（成都帮是席位集合体，不是个人；走 Group F fallback 更诚实）
+- 增加 2 条 regression test：
+  - `test_quotes_knowledge_base_covers_authored_personas`：确保每个 authored 人物都在 KB 有段落
+  - `test_quotes_knowledge_base_has_source_urls`：抽查 buffett / soros / simons 段落必须带 http(s) URL 溯源
+
+### 下游影响
+
+Agent 在 Task 3 生成 51 评委 comment 时，读 KB 能拿到：
+- 每人真实原话（而不是瞎编的"巴菲特风格"话术）
+- 每人的语言风格关键词（便于模仿）
+- URL 可溯源（用户如果质疑哪句话，能点开看原文）
+
+这是让评委 panel 从"模板话术"升级到"真 persona"的最后一块基础建设。
+
+### 回归
+
+**30/30** regression tests pass（新增 2 条）
+
+### 改动文件
+
+- `skills/investor-panel/references/quotes-knowledge-base.md` · +333 行（22 个新人物段落）
+- `skills/deep-analysis/scripts/lib/investor_profile.py` · 移除 chengdu（改走 group fallback）
+- `skills/deep-analysis/scripts/tests/test_no_regressions.py` · +2 条测试
+- 版本号 2.8.0 → 2.8.1（4 个 manifest）
+
+---
+
 ## v2.8.0 — 2026-04-17 (persona profile · 因地制宜)
 
 > **每个评委用自己的方法论回答 3 个新问题——不是模板，是 22 位标志性人物各自 authentic 的内容**

@@ -141,11 +141,8 @@ PROFILES: dict[str, dict[str, str]] = {
         "position_sizing": "打最强龙头，重仓敢拿；接力中军分仓",
         "what_would_change_my_mind": "题材逻辑证伪 · 大盘系统性风险 · 自己席位被跟风破坏节奏",
     },
-    "chengdu": {
-        "time_horizon": "1-3 天超短，低吸反包为主",
-        "position_sizing": "低吸分批，单票 5-10%；快进快出，不参与已经启动的",
-        "what_would_change_my_mind": "低吸位破位 · 次日不反包 · 情绪周期见顶",
-    },
+    # 注：chengdu（成都帮）是席位集合体非个人，按 quotes-knowledge-base 的
+    # 「席位类游资·无个人原话」分类走 Group F fallback，而不是冒充成有 authored 方法论。
     "lasa": {
         "time_horizon": "1-2 天，打首板 / 二板为主",
         "position_sizing": "单票 5-15%，封板率高时加仓；封板力度弱就跑",
