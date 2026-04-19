@@ -178,6 +178,7 @@ The agent spins up a Cloudflare Tunnel and gives you a `https://xxx.trycloudflar
 | `/stock-deep-analyzer:quick-scan 00700.HK` | 30-second sanity check |
 | `/stock-deep-analyzer:panel-only 600519` | Just run the 51-investor jury — no HTML report |
 | `/stock-deep-analyzer:scan-trap 600519` | Pump-and-dump / trap detection (8 signals) |
+| `/stock-deep-analyzer:segmental-model 300308` | 🆕 Bottom-up segmental revenue model · 3-scenario × 3-year projection · cross-checks top-down DCF |
 
 ---
 

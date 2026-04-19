@@ -175,6 +175,7 @@ agent 会自动用 `--remote` 启动 Cloudflare Tunnel，给你一个 `https://x
 | `/stock-deep-analyzer:quick-scan 002273` | 30 秒速判 |
 | `/stock-deep-analyzer:panel-only 600519` | 只看 51 评委投票 |
 | `/stock-deep-analyzer:scan-trap 002273` | 杀猪盘排查 |
+| `/stock-deep-analyzer:segmental-model 300308` | 🆕 分业务收入 bottom-up 建模 · 3 情景 × 3 年 projection · 对 DCF 反向校验 |
 
 ---
 
@@ -636,6 +637,7 @@ python run.py <ticker> --no-resume
 
 | 版本 | 日期 | 主要变化 |
 |---|---|---|
+| **main** | 2026-04-20 | **Segmental Revenue Build-Up 落地**（`lib/segmental_model.py` 408 行 + `compute_segmental.py` CLI + `/segmental-model` slash command）· deep 档 `enable_segmental_model` flag 之前只在 profile 声明，实现缺失——本次从老分支 cherry-pick 3 个新文件，零冲突接入 · 同步新增 `CONTRIBUTORS.md` · 清理 14 个已合入幽灵分支 |
 | **v2.13.7** | 2026-04-19 | **16 新源真正接入 fetcher**：v2.13.4/6 登记但未用的 16 源全部接通——新建 `lib/news_providers.py`（jin10/em 快讯/em 公告/同花顺 4 源聚合）接入 `fetch_events` + `fetch_sentiment`；`_yahoo_v8_chart` 直连 HTTP 接入 US/HK K 线链（绕 yfinance cookie）；cfachina 期货协会源接入 `fetch_policy`（期货/商品 industry 专用）。实测 4/4 新闻源通 · A 股 15_events 密度 3-5 → 10-30 条 · pytest 217 passed |
 | **v2.13.6** | 2026-04-19 | **新增 6 个经 curl 验证的期货 + 财经新闻源**（SOURCES 64 → 70）：jin10_flash（类财联社零 Key 替代）/ em_kuaixun / em_stock_ann / ths_news_today / 99qh / cfachina · 8 专项测试 |
 | **v2.13.5** | 2026-04-19 | **NetworkProfile 自适应 + agent HARD-GATE 主动触发 Playwright**：9 目标 3 组网络预检（domestic/overseas/search）+ 代理检测 + 5min cache · SKILL.md / AGENTS.md 加 `HARD-GATE-PLAYWRIGHT-AUTOFILL` 让 agent 主动 FORCE · 15 专项测试 |
